@@ -1,0 +1,56 @@
+# 忽略Python编译文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 忽略虚拟环境
+venv/
+env/
+
+# 忽略日志文件
+*.log
+
+# 忽略IDE相关文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 忽略操作系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略配置文件中的敏感信息
+config/config.yaml
+
+# 忽略上传的文件
+uploads/
+
+# 忽略生成的输出文件
+outputs/
+
+# 忽略前端node_modules
+frontend/node_modules/
+
+# 忽略前端构建文件
+frontend/build/
+
+# 忽略临时文件
+*.tmp
+*.temp
+
+# 忽略测试文件
+__tests__/
+*.test.js
+*.spec.js
+
+# 忽略覆盖率报告
+coverage/
+
+# 忽略Docker相关文件
+Dockerfile
+.dockerignore
+
+# 忽略数据库文件
+*.db
+*.sqlite

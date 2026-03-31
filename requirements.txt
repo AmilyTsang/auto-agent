@@ -1,0 +1,38 @@
+# Auto-Agent: 自动化数据分析与报告生成智能体
+# 核心依赖
+
+# LangChain 智能体框架
+langchain>=0.1.0,<0.2.0
+langchain-openai>=0.1.0,<0.2.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 数据分析与统计
+scipy>=1.10.0
+scikit-learn>=1.3.0
+statsmodels>=0.14.0
+
+# 数据可视化
+plotly>=5.15.0
+matplotlib>=3.7.0
+
+# 报告生成
+jinja2>=3.1.0
+python-pptx>=0.6.21
+
+# API服务
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# 配置管理
+pyyaml>=6.0
+
+# HTTP请求
+requests>=2.31.0
+
+# 前端界面（可选）
+gradio>=4.0.0
