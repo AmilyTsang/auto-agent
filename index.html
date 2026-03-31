@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Agent: 智能数据分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        .upload-section {
+            margin: 30px 0;
+            padding: 30px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+        }
+        .btn-secondary:hover {
+            background-color: #0b7dda;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        .btn-danger:hover {
+            background-color: #da190b;
+        }
+        .result-section {
+            margin-top: 30px;
+        }
+        .output-text {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .chart-container {
+            margin: 20px 0;
+            position: relative;
+            height: 400px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .file-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border-radius: 5px;
+        }
+        .tabs {
+            display: flex;
+            margin: 20px 0;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 3px solid #4CAF50;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auto-Agent 智能数据分析工具</h1>
+        <p style="text-align: center; color: #666;">上传数据文件，自动分析并生成报告</p>
+        
+        <div class="upload-section">
+            <h3>上传数据文件</h3>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.json" style="display: none;">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+            <span id="fileName" style="margin: 0 10px;"></span>
+            <button class="btn btn-secondary" onclick="processData()">处理数据</button>
+            <div id="fileInfo" class="file-info hidden"></div>
+        </div>
+        
+        <div id="results" class="result-section hidden">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('analysis')">数据分析</div>
+                <div class="tab" onclick="switchTab('visualization')">数据可视化</div>
+                <div class="tab" onclick="switchTab('report')">报告生成</div>
+            </div>
+            
+            <div id="analysis" class="tab-content active">
+                <h2>智能数据分析</h2>
+                <div class="grid-container">
+                    <div class="card">
+                        <h3>数据概览</h3>
+                        <div id="dataOverview"></div>
+                    </div>
+                    <div class="card">
+                        <h3>数据类型识别</h3>
+                        <div id="dataTypes"></div>
+                    </div>
+                </div>
+                <h3>详细统计信息</h3>
+                <textarea class="output-text" id="outputText" readonly></textarea>
+            </div>
+            
+            <div id="visualization" class="tab-content">
+                <h2>数据可视化</h2>
+                <div class="form-group">
+                    <label for="chartType">图表类型</label>
+                    <select id="chartType" onchange="updateChart()">
+                        <option value="bar">柱状图</option>
+                        <option value="pie">饼图</option>
+                        <option value="line">折线图</option>
+                        <option value="scatter">散点图</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="xAxis">X轴数据</label>
+                    <select id="xAxis" onchange="updateChart()"></select>
+                </div>
+                <div class="form-group">
+                    <label for="yAxis">Y轴数据</label>
+                    <select id="yAxis" onchange="updateChart()"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                </div>
+            </div>
+            
+            <div id="report" class="tab-content">
+                <h2>自动报告生成</h2>
+                <div class="form-group">
+                    <label for="reportFormat">报告格式</label>
+                    <select id="reportFormat">
+                        <option value="html">HTML</option>
+                        <option value="txt">文本文件</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateReport()">生成报告</button>
+                <div id="reportResult" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let fileData = null;
+        let parsedData = null;
+        let chart = null;
+        
+        // 监听文件选择
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+                fileData = file;
+                
+                // 显示文件信息
+                const fileInfo = document.getElementById('fileInfo');
+                fileInfo.innerHTML = `
+                    <strong>文件名:</strong> ${file.name}<br>
+                    <strong>文件大小:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>文件类型:</strong> ${file.type}
+                `;
+                fileInfo.classList.remove('hidden');
+            }
+        });
+        
+        // 处理数据
+        function processData() {
+            if (!fileData) {
+                document.getElementById('outputText').value = '请先选择数据文件';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let data = e.target.result;
+                    
+                    // 根据文件类型解析数据
+                    if (fileData.name.endsWith('.csv')) {
+                        parsedData = parseCSV(data);
+                    } else if (fileData.name.endsWith('.json')) {
+                        parsedData = parseJSON(data);
+                    } else {
+                        document.getElementById('outputText').value = '暂不支持Excel文件，请上传CSV或JSON文件';
+                        return;
+                    }
+                    
+                    // 显示结果部分
+                    document.getElementById('results').classList.remove('hidden');
+                    
+                    // 生成统计信息
+                    generateAnalysis();
+                    
+                    // 填充图表选项
+                    populateChartOptions();
+                    
+                    // 生成默认图表
+                    updateChart();
+                    
+                } catch (error) {
+                    document.getElementById('outputText').value = `处理数据时出错：${error.message}`;
+                }
+            };
+            
+            reader.readAsText(fileData);
+        }
+        
+        // 解析CSV数据
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                const values = lines[i].split(',').map(v => v.trim());
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                data.push(row);
+            }
+            
+            return { headers, data };
+        }
+        
+        // 解析JSON数据
+        function parseJSON(jsonText) {
+            const data = JSON.parse(jsonText);
+            if (Array.isArray(data) && data.length > 0) {
+                const headers = Object.keys(data[0]);
+                return { headers, data };
+            }
+            throw new Error('JSON数据格式不正确');
+        }
+        
+        // 生成分析结果
+        function generateAnalysis() {
+            const overview = document.getElementById('dataOverview');
+            const dataTypes = document.getElementById('dataTypes');
+            const outputText = document.getElementById('outputText');
+            
+            // 数据概览
+            overview.innerHTML = `
+                <div class="stat-item">
+                    <span>总行数:</span>
+                    <span>${parsedData.data.length}</span>
+                </div>
+                <div class="stat-item">
+                    <span>总列数:</span>
+                    <span>${parsedData.headers.length}</span>
+                </div>
+                <div class="stat-item">
+                    <span>列名:</span>
+                    <span>${parsedData.headers.join(', ')}</span>
+                </div>
+            `;
+            
+            // 数据类型识别
+            let typeInfo = '';
+            parsedData.headers.forEach(header => {
+                const sampleValues = parsedData.data.slice(0, 5).map(row => row[header]);
+                const type = identifyDataType(sampleValues);
+                typeInfo += `<div class="stat-item"><span>${header}:</span><span>${type}</span></div>`;
+            });
+            dataTypes.innerHTML = typeInfo;
+            
+            // 详细统计信息
+            let stats = `数据加载成功！\n\n`;
+            stats += `数据概览:\n`;
+            stats += `总行数: ${parsedData.data.length}\n`;
+            stats += `总列数: ${parsedData.headers.length}\n`;
+            stats += `列名: ${parsedData.headers.join(', ')}\n\n`;
+            
+            stats += `数据类型识别:\n`;
+            parsedData.headers.forEach(header => {
+                const sampleValues = parsedData.data.slice(0, 5).map(row => row[header]);
+                const type = identifyDataType(sampleValues);
+                stats += `${header}: ${type}\n`;
+            });
+            
+            outputText.value = stats;
+        }
+        
+        // 识别数据类型
+        function identifyDataType(values) {
+            // 检查是否为数值类型
+            const numericValues = values.filter(v => !isNaN(parseFloat(v)) && isFinite(v));
+            if (numericValues.length === values.length) {
+                return '数值型';
+            }
+            
+            // 检查是否为日期类型
+            const dateValues = values.filter(v => !isNaN(Date.parse(v)));
+            if (dateValues.length === values.length) {
+                return '日期型';
+            }
+            
+            // 检查是否为布尔类型
+            const boolValues = values.filter(v => v.toLowerCase() === 'true' || v.toLowerCase() === 'false');
+            if (boolValues.length === values.length) {
+                return '布尔型';
+            }
+            
+            // 默认为文本类型
+            return '文本型';
+        }
+        
+        // 填充图表选项
+        function populateChartOptions() {
+            const xAxis = document.getElementById('xAxis');
+            const yAxis = document.getElementById('yAxis');
+            
+            // 清空现有选项
+            xAxis.innerHTML = '';
+            yAxis.innerHTML = '';
+            
+            // 添加选项
+            parsedData.headers.forEach(header => {
+                const xOption = document.createElement('option');
+                xOption.value = header;
+                xOption.textContent = header;
+                xAxis.appendChild(xOption);
+                
+                const yOption = document.createElement('option');
+                yOption.value = header;
+                yOption.textContent = header;
+                yAxis.appendChild(yOption);
+            });
+        }
+        
+        // 更新图表
+        function updateChart() {
+            const chartType = document.getElementById('chartType').value;
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis = document.getElementById('yAxis').value;
+            
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            // 销毁现有图表
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // 准备数据
+            const labels = parsedData.data.slice(0, 20).map(row => row[xAxis]);
+            const data = parsedData.data.slice(0, 20).map(row => {
+                const value = parseFloat(row[yAxis]);
+                return isNaN(value) ? 0 : value;
+            });
+            
+            // 创建新图表
+            chart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: yAxis,
+                        data: data,
+                        backgroundColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ] : 'rgba(75, 192, 192, 0.2)',
+                        borderColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ] : 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: chartType !== 'pie' ? {
+                        y: {
+                            beginAtZero: true
+                        }
+                    } : {}
+                }
+            });
+        }
+        
+        // 生成报告
+        function generateReport() {
+            const format = document.getElementById('reportFormat').value;
+            const reportResult = document.getElementById('reportResult');
+            
+            // 生成报告内容
+            let reportContent = `# Auto-Agent 数据分析报告\n\n`;
+            reportContent += `## 报告生成时间\n${new Date().toLocaleString()}\n\n`;
+            reportContent += `## 数据概览\n`;
+            reportContent += `总行数: ${parsedData.data.length}\n`;
+            reportContent += `总列数: ${parsedData.headers.length}\n`;
+            reportContent += `列名: ${parsedData.headers.join(', ')}\n\n`;
+            
+            reportContent += `## 数据类型分析\n`;
+            parsedData.headers.forEach(header => {
+                const sampleValues = parsedData.data.slice(0, 5).map(row => row[header]);
+                const type = identifyDataType(sampleValues);
+                reportContent += `${header}: ${type}\n`;
+            });
+            
+            reportContent += `\n## 数据预览\n`;
+            reportContent += parsedData.headers.join(', ') + '\n';
+            parsedData.data.slice(0, 5).forEach(row => {
+                reportContent += parsedData.headers.map(header => row[header]).join(', ') + '\n';
+            });
+            
+            // 创建下载链接
+            const blob = new Blob([reportContent], { type: format === 'html' ? 'text/html' : 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `analysis_report_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${format}`;
+            a.textContent = `下载${format.toUpperCase()}报告`;
+            a.className = 'btn';
+            
+            // 显示结果
+            reportResult.innerHTML = '<p>报告生成成功！</p>';
+            reportResult.appendChild(a);
+        }
+        
+        // 切换标签页
+        function switchTab(tabId) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的激活状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的内容
+            document.getElementById(tabId).classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
