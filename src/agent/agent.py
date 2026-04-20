@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain.agents import create_tool_calling_agent
 from langchain.agents import AgentExecutor
 from .tools import tools
+from .conversation_manager import ConversationManager
 import yaml
 import os
 
@@ -19,8 +20,12 @@ class DataInsightAgent:
             temperature=self.config["llm"]["temperature"],
             max_tokens=self.config["llm"]["max_tokens"],
             base_url=self.config["llm"]["base_url"],
-            api_key=self.config["llm"]["api_key"]
+            api_key=self.config["llm"]["api_key"],
+            api_type=self.config["llm"]["api_type"]
         )
+        
+        # 初始化对话管理器
+        self.conversation_manager = ConversationManager()
         
         # 创建提示模板
         tools_description = "\n".join([
@@ -67,14 +72,15 @@ class DataInsightAgent:
             tools=tools,
             verbose=True
         )
-        
-        # 对话历史
-        self.history = []
     
-    def run(self, user_input):
+    def run(self, user_input, conversation_id=None):
         """运行agent，处理用户输入"""
+        # 设置当前对话
+        if conversation_id:
+            self.conversation_manager.set_current_conversation(conversation_id)
+        
         # 构建上下文
-        history_str = "\n".join([f"用户: {h[0]}\n助手: {h[1]}" for h in self.history])
+        history_str = self.conversation_manager.get_conversation_history()
         
         # 调用agent
         response = self.agent_executor.invoke({
@@ -82,15 +88,33 @@ class DataInsightAgent:
             "history": history_str
         })
         
-        # 更新对话历史
-        self.history.append((user_input, response["output"]))
+        # 添加消息到对话历史
+        self.conversation_manager.add_message("用户", user_input)
+        self.conversation_manager.add_message("助手", response["output"])
         
         return response["output"]
     
-    def clear_history(self):
+    def clear_history(self, conversation_id=None):
         """清空对话历史"""
-        self.history = []
+        if conversation_id:
+            self.conversation_manager.delete_conversation(conversation_id)
+        else:
+            current_id = self.conversation_manager.get_current_conversation()
+            self.conversation_manager.delete_conversation(current_id)
     
-    def get_history(self):
+    def get_history(self, conversation_id=None):
         """获取对话历史"""
-        return self.history
+        return self.conversation_manager.get_messages(conversation_id)
+    
+    def create_conversation(self):
+        """创建新对话"""
+        return self.conversation_manager.create_conversation()
+    
+    def list_conversations(self):
+        """列出所有对话"""
+        return self.conversation_manager.list_conversations()
+    
+    def set_current_conversation(self, conversation_id):
+        """设置当前对话"""
+        return self.conversation_manager.set_current_conversation(conversation_id)
+

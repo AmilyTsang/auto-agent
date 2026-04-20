@@ -1,38 +1,23 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import os
+import yaml
 from src.agent import DataInsightAgent
 from src.data import DataProcessor
 from src.analysis import Analyzer
 from src.visualization import Visualizer
 from src.report import ReportGenerator
-import pandas as pd
-import os
-import yaml
 
 # 加载配置
 with open("config/config.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
 
-# 创建FastAPI应用
-app = FastAPI(
-    title="Auto-Agent API",
-    description="自动化数据分析与报告生成智能体",
-    version="1.0.0"
-)
-
-# 配置CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=config["api"]["cors_origins"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 创建Flask应用
+app = Flask(__name__)
+CORS(app)
 
 # 初始化组件
-agent = DataInsightAgent()
+tagent = DataInsightAgent()
 data_processor = DataProcessor()
 analyzer = Analyzer()
 visualizer = Visualizer()
@@ -41,44 +26,81 @@ report_generator = ReportGenerator()
 # 全局变量存储上传的文件
 uploaded_files = {}
 
-# 请求模型
-class ChatRequest(BaseModel):
-    message: str
-
-@app.post("/api/chat")
-async def chat(request: ChatRequest):
+@app.route('/api/chat', methods=['POST'])
+def chat():
     """与智能体聊天"""
     try:
-        response = agent.run(request.message)
-        return {"response": response}
+        data = request.json
+        message = data.get('message')
+        conversation_id = data.get('conversation_id')
+        
+        if not message:
+            return jsonify({"response": "请输入消息"}), 400
+        
+        response = agent.run(message, conversation_id)
+        return jsonify({
+            "response": response,
+            "conversation_id": agent.conversation_manager.get_current_conversation()
+        })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"response": f"错误: {str(e)}"}), 500
 
-@app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
     """上传数据文件"""
     try:
+        if 'file' not in request.files:
+            return jsonify({"message": "请选择文件"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"message": "请选择文件"}), 400
+        
         # 保存文件
         file_path = f"uploads/{file.filename}"
         os.makedirs("uploads", exist_ok=True)
         
-        with open(file_path, "wb") as f:
-            f.write(await file.read())
+        file.save(file_path)
         
         # 存储文件信息
         file_id = f"file_{len(uploaded_files) + 1}"
         uploaded_files[file_id] = file_path
         
-        return {"file_id": file_id, "file_path": file_path}
+        return jsonify({"message": f"文件上传成功！文件ID: {file_id}"})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"message": f"上传失败: {str(e)}"}), 500
 
-@app.post("/api/analyze")
-async def analyze_data(file_id: str = Form(...), analysis_type: str = Form(...)):
+@app.route('/api/clear', methods=['POST'])
+def clear_history():
+    """清空对话历史"""
+    try:
+        agent.clear_history()
+        return jsonify({"message": "历史已清空"})
+    except Exception as e:
+        return jsonify({"message": f"清空失败: {str(e)}"}), 500
+
+@app.route('/api/clear_docs', methods=['POST'])
+def clear_documents():
+    """清空上传的文档"""
+    try:
+        uploaded_files.clear()
+        # 清空uploads目录
+        if os.path.exists("uploads"):
+            for file in os.listdir("uploads"):
+                os.remove(os.path.join("uploads", file))
+        return jsonify({"message": "文档已清空"})
+    except Exception as e:
+        return jsonify({"message": f"清空失败: {str(e)}"}), 500
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze_data():
     """分析数据"""
     try:
-        if file_id not in uploaded_files:
-            raise HTTPException(status_code=404, detail="文件不存在")
+        file_id = request.form.get('file_id')
+        analysis_type = request.form.get('analysis_type', 'descriptive')
+        
+        if not file_id or file_id not in uploaded_files:
+            return jsonify({"message": "文件不存在"}), 400
         
         file_path = uploaded_files[file_id]
         
@@ -97,26 +119,27 @@ async def analyze_data(file_id: str = Form(...), analysis_type: str = Form(...))
             numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
             
             if not date_cols or not numeric_cols:
-                raise HTTPException(status_code=400, detail="数据中没有日期列或数值列")
+                return jsonify({"message": "数据中没有日期列或数值列"}), 400
             
             results = analyzer.time_series_analysis(df, date_cols[0], numeric_cols[0])
         elif analysis_type == "clustering":
             results = analyzer.clustering_analysis(df)
         else:
-            raise HTTPException(status_code=400, detail="不支持的分析类型")
+            return jsonify({"message": "不支持的分析类型"}), 400
         
-        return results
-    except HTTPException:
-        raise
+        return jsonify(results)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"message": f"分析失败: {str(e)}"}), 500
 
-@app.post("/api/visualize")
-async def visualize_data(file_id: str = Form(...), chart_type: str = Form(...)):
+@app.route('/api/visualize', methods=['POST'])
+def visualize_data():
     """可视化数据"""
     try:
-        if file_id not in uploaded_files:
-            raise HTTPException(status_code=404, detail="文件不存在")
+        file_id = request.form.get('file_id')
+        chart_type = request.form.get('chart_type', 'bar')
+        
+        if not file_id or file_id not in uploaded_files:
+            return jsonify({"message": "文件不存在"}), 400
         
         file_path = uploaded_files[file_id]
         
@@ -129,7 +152,7 @@ async def visualize_data(file_id: str = Form(...), chart_type: str = Form(...)):
         # 生成图表
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
         if not numeric_cols:
-            raise HTTPException(status_code=400, detail="数据中没有数值列")
+            return jsonify({"message": "数据中没有数值列"}), 400
         
         x_col = df.columns[0]
         y_col = numeric_cols[0]
@@ -142,7 +165,7 @@ async def visualize_data(file_id: str = Form(...), chart_type: str = Form(...)):
             if len(numeric_cols) >= 2:
                 chart_path = visualizer.create_scatter_chart(df, numeric_cols[0], numeric_cols[1], "散点图")
             else:
-                raise HTTPException(status_code=400, detail="数据中至少需要两列数值列")
+                return jsonify({"message": "数据中至少需要两列数值列"}), 400
         elif chart_type == "pie":
             # 选择分类列
             cat_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
@@ -152,22 +175,27 @@ async def visualize_data(file_id: str = Form(...), chart_type: str = Form(...)):
                 counts.columns = [cat_cols[0], 'count']
                 chart_path = visualizer.create_pie_chart(counts, 'count', cat_cols[0], f"{cat_cols[0]} 饼图")
             else:
-                raise HTTPException(status_code=400, detail="数据中没有分类列")
+                return jsonify({"message": "数据中没有分类列"}), 400
         else:
-            raise HTTPException(status_code=400, detail="不支持的图表类型")
+            return jsonify({"message": "不支持的图表类型"}), 400
         
-        return {"chart_path": chart_path}
-    except HTTPException:
-        raise
+        # 读取图表HTML内容
+        with open(chart_path, "r", encoding="utf-8") as f:
+            chart_html = f.read()
+        
+        return jsonify({"chart_html": chart_html})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"message": f"可视化失败: {str(e)}"}), 500
 
-@app.post("/api/generate_report")
-async def generate_report(file_id: str = Form(...), report_format: str = Form(...)):
+@app.route('/api/generate_report', methods=['POST'])
+def generate_report():
     """生成报告"""
     try:
-        if file_id not in uploaded_files:
-            raise HTTPException(status_code=404, detail="文件不存在")
+        file_id = request.form.get('file_id')
+        report_format = request.form.get('report_format', 'html')
+        
+        if not file_id or file_id not in uploaded_files:
+            return jsonify({"message": "文件不存在"}), 400
         
         file_path = uploaded_files[file_id]
         
@@ -203,38 +231,21 @@ async def generate_report(file_id: str = Form(...), report_format: str = Form(..
         elif report_format == "pptx":
             report_path = report_generator.generate_pptx_report(report_data, "数据分析报告")
         else:
-            raise HTTPException(status_code=400, detail="不支持的报告格式")
+            return jsonify({"message": "不支持的报告格式"}), 400
         
-        return {"report_path": report_path}
-    except HTTPException:
-        raise
+        return jsonify({"message": f"报告生成成功！保存路径: {report_path}"})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"message": f"生成报告失败: {str(e)}"}), 500
 
-@app.get("/api/files/{file_id}")
-async def get_file(file_id: str):
-    """获取文件"""
-    if file_id not in uploaded_files:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    file_path = uploaded_files[file_id]
-    return FileResponse(file_path)
-
-@app.get("/api/reports/{report_path:path}")
-async def get_report(report_path: str):
-    """获取报告"""
-    full_path = f"reports/{report_path}"
-    if not os.path.exists(full_path):
-        raise HTTPException(status_code=404, detail="报告不存在")
-    
-    return FileResponse(full_path)
-
-@app.get("/api/health")
-async def health_check():
-    """健康检查"""
-    return {"status": "healthy"}
-
-@app.get("/")
-async def root():
+@app.route('/')
+def index():
     """根路径"""
-    return {"message": "Auto-Agent API is running. Please use Gradio interface at http://localhost:7860"}
+    return send_from_directory('frontend', 'index.html')
+
+@app.route('/frontend/<path:filename>')
+def serve_frontend(filename):
+    """服务前端文件"""
+    return send_from_directory('frontend', filename)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
