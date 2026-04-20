@@ -55,6 +55,7 @@ auto-agent/
 │       └── visualizer.py
 ├── frontend/            # 前端文件
 │   └── index.html       # Web前端界面
+├── uploads/             # 上传文件目录
 ├── config/              # 配置文件
 │   └── config.yaml      # 主配置文件
 ├── app.py               # Flask应用入口
@@ -192,8 +193,8 @@ python app.py
 1. 使用API服务时需要配置有效的智谱AI API密钥
 2. 上传的数据文件大小建议不超过10MB
 3. 复杂的分析任务可能需要较长时间执行
-4. 对话历史保存在`conversations`目录中
-5. 生成的图表和报告分别保存在`outputs`和`reports`目录中
+4. 上传的文件保存在`uploads`目录中
+5. 生成的图表和报告分别保存在相应的输出目录中
 
 ## 技术特点
 
