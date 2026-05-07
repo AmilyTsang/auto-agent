@@ -19,9 +19,24 @@
         }
         
         .container {
-            max-width: 900px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
         }
         
         header {
@@ -337,7 +352,12 @@
         
         @media (max-width: 768px) {
             .container {
+                grid-template-columns: 1fr;
                 padding: 15px;
+            }
+            
+            .sidebar {
+                position: static;
             }
             
             h1 {
@@ -398,14 +418,128 @@
                 height: 350px;
             }
         }
+        
+        .feature-sidebar {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-sidebar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-sidebar h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .feature-item {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .feature-item h4 {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-item h4 i {
+            margin-right: 10px;
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+        
+        .feature-item p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .feature-item ul {
+            margin-top: 10px;
+            padding-left: 20px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .feature-item ul li {
+            margin-bottom: 5px;
+        }
+        
+        .tech-stack {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 8px;
+        }
+        
+        .tech-stack h4 {
+            font-size: 1rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .tech-stack ul {
+            padding-left: 20px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .tech-stack ul li {
+            margin-bottom: 5px;
+        }
+        
+        .usage-tips {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .usage-tips h4 {
+            font-size: 1rem;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .usage-tips ul {
+            padding-left: 20px;
+            font-size: 0.85rem;
+            color: #856404;
+        }
+        
+        .usage-tips ul li {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Auto-Agent 智能数据分析工具</h1>
-            <p class="subtitle">上传数据文件，获取智能分析和可视化</p>
-        </header>
+        <div class="main-content">
+            <header>
+                <h1>Auto-Agent 智能数据分析工具</h1>
+                <p class="subtitle">上传数据文件，获取智能分析和可视化</p>
+            </header>
         
         <div class="upload-section">
             <h2><i class="fas fa-file-upload"></i>文件上传</h2>
@@ -440,6 +574,83 @@
         
         <div class="status" id="status">
             就绪
+        </div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="feature-sidebar">
+                <h3><i class="fas fa-star"></i> 核心功能</h3>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-comments"></i> 智能对话分析</h4>
+                    <p>基于大语言模型的对话系统，支持多轮对话交互，通过自然语言指令进行数据分析</p>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-chart-bar"></i> 智能数据分析</h4>
+                    <p>自动识别数据类型，执行统计分析，发现数据中的模式和趋势</p>
+                    <ul>
+                        <li>描述性分析</li>
+                        <li>时间序列分析</li>
+                        <li>聚类分析</li>
+                        <li>回归分析</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-chart-pie"></i> 数据可视化</h4>
+                    <p>生成多种类型的图表，直观展示数据特征</p>
+                    <ul>
+                        <li>柱状图 - 比较不同类别数据</li>
+                        <li>折线图 - 展示趋势变化</li>
+                        <li>散点图 - 分析数据关系</li>
+                        <li>饼图 - 显示数据占比</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-file-alt"></i> 自动报告生成</h4>
+                    <p>基于分析结果生成结构化报告，支持多种格式</p>
+                    <ul>
+                        <li>HTML 格式 - 网页展示</li>
+                        <li>PDF 格式 - 文档保存</li>
+                        <li>PPTX 格式 - 演示文稿</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-folder-open"></i> 多格式支持</h4>
+                    <p>支持多种数据格式的导入和处理</p>
+                    <ul>
+                        <li>CSV - 逗号分隔值文件</li>
+                        <li>Excel - 电子表格文件</li>
+                        <li>JSON - 结构化数据文件</li>
+                        <li>TXT - 文本文件</li>
+                    </ul>
+                </div>
+                
+                <div class="tech-stack">
+                    <h4><i class="fas fa-code"></i> 技术栈</h4>
+                    <ul>
+                        <li><strong>后端：</strong>Flask + LangChain</li>
+                        <li><strong>数据处理：</strong>pandas + numpy</li>
+                        <li><strong>机器学习：</strong>scikit-learn</li>
+                        <li><strong>可视化：</strong>plotly + matplotlib</li>
+                        <li><strong>大模型：</strong>智谱AI GLM-4</li>
+                    </ul>
+                </div>
+                
+                <div class="usage-tips">
+                    <h4><i class="fas fa-lightbulb"></i> 使用提示</h4>
+                    <ul>
+                        <li>上传数据文件后，可以直接询问数据分析问题</li>
+                        <li>支持中文自然语言交互</li>
+                        <li>可以要求生成特定类型的图表</li>
+                        <li>可以请求生成分析报告</li>
+                        <li>文件大小建议不超过10MB</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
     

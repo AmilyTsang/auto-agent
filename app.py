@@ -23,6 +23,9 @@ analyzer = Analyzer()
 visualizer = Visualizer()
 report_generator = ReportGenerator()
 
+# 为了兼容性，创建一个 agent 别名
+agent = tagent
+
 # 全局变量存储上传的文件
 uploaded_files = {}
 
