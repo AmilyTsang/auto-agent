@@ -1,0 +1,37 @@
+llm:
+  api_key: "5102468d94314b8f8504e04f7050bc98.3r13qoJq7UFX5MpL"
+  model: "glm-5.1"
+  temperature: 0.7
+  max_tokens: 2000
+  base_url: "https://open.bigmodel.cn/api/mock"
+  api_type: "openai"
+
+data:
+  allowed_extensions: ["csv", "xlsx", "json", "txt"]
+  max_file_size: 10485760  # 10MB
+  encoding: "utf-8"
+
+analysis:
+  default_sample_size: 1000
+  correlation_threshold: 0.5
+
+visualization:
+  dpi: 100
+  figsize: [12, 6]
+  style: "seaborn"
+
+report:
+  default_format: "html"
+  include_charts: true
+  include_data: false
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  cors_origins: ["*"]
+
+frontend:
+  port: 7860
+  title: "Auto-Agent 智能分析助手"
+  theme: "default"
